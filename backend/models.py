@@ -1,0 +1,64 @@
+from pydantic import BaseModel
+from datetime import date, datetime
+from typing import Optional, List
+from decimal import Decimal
+
+
+class CategoryBase(BaseModel):
+    name: str
+    type: str  # 'income' или 'expense'
+    color: Optional[str] = '#007bff'
+
+
+class CategoryCreate(CategoryBase):
+    pass
+
+
+class Category(CategoryBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TransactionBase(BaseModel):
+    amount: Decimal
+    category_id: int
+    date: date
+    description: Optional[str] = None
+
+
+class TransactionCreate(TransactionBase):
+    pass
+
+
+class Transaction(TransactionBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TransactionWithCategory(Transaction):
+    category_name: str
+    category_type: str
+    category_color: str
+
+
+class AnalyticsRequest(BaseModel):
+    period: str = "month"  # 'today', 'week', 'month', 'quarter', 'year', 'custom', 'all'
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    group_by: Optional[str] = 'category'  # 'category', 'day'
+
+
+class AnalyticsResponse(BaseModel):
+    total_income: Decimal
+    total_expense: Decimal
+    balance: Decimal
+    by_category: List[dict]
+    daily_totals: List[dict]
+    period: dict

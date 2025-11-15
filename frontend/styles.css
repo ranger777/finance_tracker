@@ -1,0 +1,375 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f6fa;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Шапка */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e1e8ed;
+}
+
+.header h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+}
+
+.period-selector {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.period-selector select {
+    padding: 10px 15px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+}
+
+.custom-dates {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.custom-dates input {
+    padding: 8px 12px;
+    border: 2px solid #e1e8ed;
+    border-radius: 6px;
+}
+
+.custom-dates button {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Карточки статистики */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    border-left: 5px solid;
+}
+
+.stat-card.income {
+    border-left-color: #27ae60;
+}
+
+.stat-card.expense {
+    border-left-color: #e74c3c;
+}
+
+.stat-card.balance {
+    border-left-color: #3498db;
+}
+
+.stat-card.balance.positive {
+    border-left-color: #27ae60;
+}
+
+.stat-card.balance.negative {
+    border-left-color: #e74c3c;
+}
+
+.stat-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #7f8c8d;
+}
+
+.stat-card .amount {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Основной контент */
+.main-content {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 30px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+}
+
+.card h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.3rem;
+}
+
+/* Формы */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #5a6c7d;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+button {
+    padding: 12px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+/* Список транзакций */
+.transactions-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.transaction-item.income {
+    border-left-color: #27ae60;
+}
+
+.transaction-item.expense {
+    border-left-color: #e74c3c;
+}
+
+.transaction-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.transaction-info .category {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.transaction-info .description {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.transaction-info .date {
+    color: #95a5a6;
+    font-size: 0.8rem;
+}
+
+.transaction-item .amount {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Аналитика по категориям */
+.category-analytics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.analytics-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Графики */
+.chart-container {
+    margin-bottom: 25px;
+    height: 300px;
+}
+
+/* Снекбары */
+.snackbar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 400px;
+    transform: translateX(150%);
+    transition: transform 0.3s ease;
+}
+
+.snackbar.show {
+    transform: translateX(0);
+}
+
+.snackbar.success {
+    background: #27ae60;
+    color: white;
+    border-left: 4px solid #219653;
+}
+
+.snackbar.error {
+    background: #e74c3c;
+    color: white;
+    border-left: 4px solid #c0392b;
+}
+
+.snackbar-content {
+    flex: 1;
+    font-weight: 500;
+}
+
+.snackbar-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.snackbar-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.snackbar-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.5);
+    width: 100%;
+    transform-origin: left;
+    animation: progress 4s linear;
+}
+
+.snackbar.error .snackbar-progress {
+    animation: none;
+}
+
+@keyframes progress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .period-selector {
+        flex-direction: column;
+    }
+
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+}
