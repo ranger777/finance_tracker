@@ -12,37 +12,64 @@
         <!-- Шапка -->
         <header class="header">
             <h1>💰 Финансовый трекер</h1>
-            <div class="period-selector">
-                <select id="periodSelect">
-                    <option value="today">Сегодня</option>
-                    <option value="week">Текущая неделя</option>
-                    <option value="month" selected>Текущий месяц</option>
-                    <option value="quarter">Текущий квартал</option>
-                    <option value="year">Текущий год</option>
-                    <option value="all">Все время</option>
-                    <option value="custom">Произвольный период</option>
-                </select>
-                <div id="customDateRange" class="custom-dates" style="display: none;">
-                    <input type="date" id="startDate">
-                    <input type="date" id="endDate">
-                    <button onclick="applyCustomDates()">Применить</button>
+            <div class="header-controls">
+                <div class="period-selector">
+                    <select id="periodSelect">
+                        <option value="today">Сегодня</option>
+                        <option value="week">Текущая неделя</option>
+                        <option value="month" selected>Текущий месяц</option>
+                        <option value="quarter">Текущий квартал</option>
+                        <option value="year">Текущий год</option>
+                        <option value="all">Все время</option>
+                        <option value="custom">Произвольный период</option>
+                    </select>
+                    <div id="customDateRange" class="custom-dates" style="display: none;">
+                        <input type="date" id="startDate">
+                        <input type="date" id="endDate">
+                        <button onclick="applyCustomDates()">Применить</button>
+                    </div>
+                </div>
+                <div class="view-toggle">
+                    <label>
+                        <input type="radio" name="view" value="main" checked onchange="switchView('main')">
+                        Основная
+                    </label>
+                    <label>
+                        <input type="radio" name="view" value="savings" onchange="switchView('savings')">
+                        Копилка
+                    </label>
                 </div>
             </div>
         </header>
 
         <!-- Карточки статистики -->
         <div class="stats-cards">
-            <div class="stat-card income">
+            <!-- Основная статистика -->
+            <div class="stat-card income main-view">
                 <h3>Доходы</h3>
                 <p id="totalIncome" class="amount">0 ₽</p>
             </div>
-            <div class="stat-card expense">
+            <div class="stat-card expense main-view">
                 <h3>Расходы</h3>
                 <p id="totalExpense" class="amount">0 ₽</p>
             </div>
-            <div class="stat-card balance">
+            <div class="stat-card balance main-view">
                 <h3>Баланс</h3>
                 <p id="totalBalance" class="amount">0 ₽</p>
+            </div>
+
+            <!-- Статистика копилки -->
+            <div class="stat-card savings-income savings-view" style="display: none;">
+                <h3>Из копилки</h3>
+                <p id="savingsIncome" class="amount">0 ₽</p>
+            </div>
+            <div class="stat-card savings-expense savings-view" style="display: none;">
+                <h3>В копилку</h3>
+                <p id="savingsExpense" class="amount">0 ₽</p>
+            </div>
+            <div class="stat-card savings-balance savings-view" style="display: none;">
+                <h3>Баланс копилки</h3>
+                <p id="savingsBalance" class="amount">0 ₽</p>
             </div>
         </div>
 
@@ -58,6 +85,8 @@
                             <select id="transactionType" onchange="updateCategories()">
                                 <option value="income">Доход</option>
                                 <option value="expense" selected>Расход</option>
+                                <option value="savings_income">Из копилки</option>
+                                <option value="savings_expense">В копилку</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -95,6 +124,8 @@
                             <select id="categoryType">
                                 <option value="income">Доход</option>
                                 <option value="expense" selected>Расход</option>
+                                <option value="savings_income">Из копилки</option>
+                                <option value="savings_expense">В копилку</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -108,14 +139,25 @@
 
             <!-- Правая колонка: Данные -->
             <div class="right-column">
-                <!-- Графики -->
-                <div class="card">
+                <!-- Графики основной статистики -->
+                <div class="card main-view">
                     <h3>📊 Аналитика</h3>
                     <div class="chart-container">
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="chart-container">
                         <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Графики копилки -->
+                <div class="card savings-view" style="display: none;">
+                    <h3>📊 Аналитика копилки</h3>
+                    <div class="chart-container">
+                        <canvas id="savingsCategoryChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="savingsDailyChart"></canvas>
                     </div>
                 </div>
 
@@ -128,10 +170,18 @@
                 </div>
 
                 <!-- Аналитика по категориям -->
-                <div class="card">
+                <div class="card main-view">
                     <h3>🏷️ По категориям</h3>
                     <div id="categoryAnalytics" class="category-analytics">
                         <!-- Аналитика будет здесь -->
+                    </div>
+                </div>
+
+                <!-- Аналитика копилки по категориям -->
+                <div class="card savings-view" style="display: none;">
+                    <h3>🏷️ Копилка по категориям</h3>
+                    <div id="savingsCategoryAnalytics" class="category-analytics">
+                        <!-- Аналитика копилки будет здесь -->
                     </div>
                 </div>
             </div>

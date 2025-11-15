@@ -17,7 +17,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS для фронтенда
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,8 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# API routes
 @app.get("/api/categories", response_model=list[Category])
 async def read_categories(category_type: Optional[str] = None):
     """Получить список категорий"""
@@ -44,7 +41,6 @@ async def read_categories(category_type: Optional[str] = None):
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
-
 
 @app.post("/api/categories")
 async def create_new_category(category: CategoryCreate):
@@ -63,19 +59,19 @@ async def create_new_category(category: CategoryCreate):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
-
 @app.get("/api/transactions")
 async def read_transactions(
         period: str = "month",
         start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        end_date: Optional[date] = None,
+        include_savings: bool = True
 ):
     """Получить транзакции за период"""
     try:
         if period != "custom":
             start_date, end_date = calculate_period_dates(period)
 
-        transactions, error = get_transactions(start_date, end_date)
+        transactions, error = get_transactions(start_date, end_date, include_savings)
         if error:
             return JSONResponse(
                 status_code=500,
@@ -87,7 +83,6 @@ async def read_transactions(
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
-
 
 @app.post("/api/transactions")
 async def create_new_transaction(transaction: TransactionCreate):
@@ -106,7 +101,6 @@ async def create_new_transaction(transaction: TransactionCreate):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
-
 @app.post("/api/analytics", response_model=AnalyticsResponse)
 async def get_analytics_data(request: AnalyticsRequest):
     """Получить аналитику по транзакциям"""
@@ -115,7 +109,8 @@ async def get_analytics_data(request: AnalyticsRequest):
             period=request.period,
             start_date=request.start_date,
             end_date=request.end_date,
-            group_by=request.group_by
+            group_by=request.group_by,
+            include_savings=request.include_savings
         )
         if error:
             return JSONResponse(
@@ -129,6 +124,30 @@ async def get_analytics_data(request: AnalyticsRequest):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
+# Новый endpoint для статистики копилки
+@app.post("/api/analytics/savings", response_model=AnalyticsResponse)
+async def get_savings_analytics(request: AnalyticsRequest):
+    """Получить аналитику по копилке"""
+    try:
+        # Для копилки всегда включаем savings транзакции
+        analytics, error = get_analytics(
+            period=request.period,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            group_by=request.group_by,
+            include_savings=True
+        )
+        if error:
+            return JSONResponse(
+                status_code=500,
+                content={"detail": error}
+            )
+        return analytics
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
+        )
 
 @app.get("/api/periods")
 async def get_available_periods():
@@ -145,14 +164,10 @@ async def get_available_periods():
         ]
     }
 
-
-# Обслуживаем фронтенд
 @app.get("/")
 async def serve_frontend():
     return FileResponse("../frontend/index.html")
 
-
-# Монтируем статические файлы фронтенда
 app.mount("/", StaticFiles(directory="../frontend"), name="frontend")
 
 if __name__ == "__main__":
