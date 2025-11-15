@@ -164,6 +164,40 @@ async def get_available_periods():
         ]
     }
 
+
+@app.put("/api/categories/{category_id}")
+async def update_category(category_id: int, category_update: dict):
+    """Обновить категорию (пока только цвет)"""
+    try:
+        with get_db() as conn:
+            # Проверяем существование категории
+            category_exists = conn.execute(
+                "SELECT id FROM categories WHERE id = ?",
+                (category_id,)
+            ).fetchone()
+
+            if not category_exists:
+                return JSONResponse(
+                    status_code=404,
+                    content={"detail": "Категория не найдена"}
+                )
+
+            # Обновляем только цвет
+            if 'color' in category_update:
+                conn.execute(
+                    "UPDATE categories SET color = ? WHERE id = ?",
+                    (category_update['color'], category_id)
+                )
+                conn.commit()
+
+            return {"status": "updated"}
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
+        )
+
 @app.get("/")
 async def serve_frontend():
     return FileResponse("../frontend/index.html")

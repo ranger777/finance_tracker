@@ -165,6 +165,147 @@ body {
     margin: 0;
 }
 
+/* Стили для страницы настроек */
+.settings-content {
+    padding: 0;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+}
+
+.settings-section h4 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.categories-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid;
+    transition: background-color 0.2s;
+}
+
+.category-setting-item:hover {
+    background: #e9ecef;
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.category-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.category-type {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.category-type.income {
+    background: #d4edda;
+    color: #155724;
+}
+
+.category-type.expense {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.category-type.savings_income {
+    background: #e8d6f7;
+    color: #4a235a;
+}
+
+.category-type.savings_expense {
+    background: #d6f7f7;
+    color: #235a5a;
+}
+
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.current-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.color-picker {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.color-picker::-webkit-color-swatch {
+    border: 2px solid #fff;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.color-picker::-moz-color-swatch {
+    border: 2px solid #fff;
+    border-radius: 4px;
+}
+
+.save-color-btn {
+    padding: 6px 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.save-color-btn:hover {
+    background: #218838;
+}
+
+.save-color-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.color-change-message {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 5px;
+    display: none;
+}
+
+.color-change-message.show {
+    display: block;
+}
+
 /* Карточки статистики */
 .stats-cards {
     display: grid;
