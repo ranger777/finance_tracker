@@ -155,7 +155,7 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
                 JOIN categories c ON t.category_id = c.id
                 {base_where} {type_filter}
                 GROUP BY c.id, c.name, c.type, c.color
-                ORDER BY c.type, total DESC
+                ORDER BY total DESC, c.type 
             '''
 
             by_category = conn.execute(category_query, base_params).fetchall()
