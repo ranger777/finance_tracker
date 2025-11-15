@@ -29,7 +29,7 @@
                     <button onclick="applyCustomDates()">Применить</button>
                 </div>
             </div>
-            <div class="view-toggle">
+            <!--<div class="view-toggle">
                 <label>
                     <input type="radio" name="view" value="main" checked onchange="switchView('main')">
                     Основная
@@ -37,6 +37,20 @@
                 <label>
                     <input type="radio" name="view" value="savings" onchange="switchView('savings')">
                     Копилка
+                </label>
+            </div>-->
+            <div class="view-toggle">
+                <label class="view-btn">
+                    <input type="radio" name="view" value="main" checked onchange="switchView('main')">
+                    <span>Основная</span>
+                </label>
+                <label class="view-btn">
+                    <input type="radio" name="view" value="savings" onchange="switchView('savings')">
+                    <span>Копилка</span>
+                </label>
+                <label class="view-btn">
+                    <input type="radio" name="view" value="settings" onchange="switchView('settings')">
+                    <span>Настройки</span>
                 </label>
             </div>
         </div>
@@ -166,6 +180,15 @@
                 </div>
                 <div class="chart-container">
                     <canvas id="savingsDailyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Блок настроек -->
+            <div class="card settings-view" style="display: none;">
+                <h3>⚙️ Настройки</h3>
+                <div class="settings-content">
+                    <p>Раздел настроек будет добавлен в ближайшем обновлении</p>
+                    <!-- Здесь потом добавим настройки -->
                 </div>
             </div>
 
