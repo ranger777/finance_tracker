@@ -136,8 +136,8 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
             # Статистика по копилке
             savings_query = f'''
                 SELECT 
-                    COALESCE(SUM(CASE WHEN c.type = 'savings_income' THEN t.amount ELSE 0 END), 0) as savings_income,
-                    COALESCE(SUM(CASE WHEN c.type = 'savings_expense' THEN t.amount ELSE 0 END), 0) as savings_expense
+                    COALESCE(SUM(CASE WHEN c.type = 'savings_income' THEN t.amount ELSE 0 END), 0) as savings_income,    -- Из копилки (уменьшение)
+                    COALESCE(SUM(CASE WHEN c.type = 'savings_expense' THEN t.amount ELSE 0 END), 0) as savings_expense   -- В копилку (увеличение)
                 FROM transactions t
                 JOIN categories c ON t.category_id = c.id
                 {savings_where} AND c.type IN ('savings_income', 'savings_expense')
@@ -160,7 +160,7 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
 
             by_category = conn.execute(category_query, base_params).fetchall()
 
-            # Ежедневные итоги
+            # Ежедневные итоги для основной статистики
             daily_query = f'''
                 SELECT 
                     t.date,
@@ -174,7 +174,21 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
 
             daily_totals = conn.execute(daily_query, base_params).fetchall()
 
-            # Баланс = (В копилку) - (Из копилки)
+            # Ежедневные итоги для копилки (НОВЫЙ ЗАПРОС)
+            savings_daily_query = f'''
+                SELECT 
+                    t.date,
+                    SUM(CASE WHEN c.type = 'savings_income' THEN t.amount ELSE 0 END) as savings_income,
+                    SUM(CASE WHEN c.type = 'savings_expense' THEN t.amount ELSE 0 END) as savings_expense
+                FROM transactions t
+                JOIN categories c ON t.category_id = c.id
+                {savings_where} AND c.type IN ('savings_income', 'savings_expense')
+                GROUP BY t.date ORDER BY t.date
+            '''
+
+            savings_daily_totals = conn.execute(savings_daily_query, savings_params).fetchall()
+
+            # ИСПРАВЛЯЕМ РАСЧЕТ БАЛАНСА КОПИЛКИ:
             savings_deposits = Decimal(str(savings_stats['savings_expense']))  # В копилку
             savings_withdrawals = Decimal(str(savings_stats['savings_income']))  # Из копилки
             savings_balance = savings_deposits - savings_withdrawals
@@ -188,6 +202,7 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
                 'savings_balance': savings_balance,
                 'by_category': [dict(row) for row in by_category],
                 'daily_totals': [dict(row) for row in daily_totals],
+                'savings_daily_totals': [dict(row) for row in savings_daily_totals],  # НОВОЕ ПОЛЕ
                 'period': {
                     'start_date': start_date.isoformat() if start_date else None,
                     'end_date': end_date.isoformat() if end_date else None,

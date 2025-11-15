@@ -53,6 +53,7 @@ class AnalyticsResponse(BaseModel):
     balance: Decimal
     by_category: List[dict]
     daily_totals: List[dict]
+    savings_daily_totals: List[dict]  # НОВОЕ ПОЛЕ
     period: dict
     # Для копилки
     savings_income: Optional[Decimal] = Decimal('0')

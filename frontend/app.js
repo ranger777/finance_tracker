@@ -565,142 +565,192 @@ async addTransaction() {
     }
 
     renderDailyChart() {
-        const ctx = document.getElementById('dailyChart').getContext('2d');
-        if (!ctx) return;
+    const ctx = document.getElementById('dailyChart').getContext('2d');
+    if (!ctx) return;
 
-        this.dailyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: this.analytics.daily_totals.map(item => this.formatDate(item.date)),
-                datasets: [
-                    {
-                        label: 'Доходы',
-                        data: this.analytics.daily_totals.map(item => item.income),
-                        borderColor: '#27ae60',
-                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Расходы',
-                        data: this.analytics.daily_totals.map(item => item.expense),
-                        borderColor: '#e74c3c',
-                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Доходы и расходы по дням'
+    this.dailyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: this.analytics.daily_totals.map(item => this.formatDate(item.date)),
+            datasets: [
+                {
+                    label: 'Доходы',
+                    data: this.analytics.daily_totals.map(item => item.income),
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Расходы',
+                    data: this.analytics.daily_totals.map(item => item.expense),
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Доходы и расходы по дням',
+                    font: {
+                        size: 16
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: (value) => this.formatCurrency(value)
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return `${context.dataset.label}: ${this.formatCurrency(context.raw)}`;
                         }
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => this.formatCurrency(value)
+                    },
+                    title: {
+                        display: true,
+                        text: 'Сумма'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                }
             }
-        });
-    }
+        }
+    });
+}
 
     renderSavingsCategoryChart() {
-        const ctx = document.getElementById('savingsCategoryChart').getContext('2d');
-        if (!ctx) return;
+    const ctx = document.getElementById('savingsCategoryChart').getContext('2d');
+    if (!ctx) return;
 
-        const savingsData = this.savingsAnalytics.by_category.filter(
-            item => item.category_type === 'savings_income' || item.category_type === 'savings_expense'
-        );
+    const savingsData = this.savingsAnalytics.by_category.filter(
+        item => item.category_type === 'savings_income' || item.category_type === 'savings_expense'
+    );
 
-        this.savingsCategoryChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: savingsData.map(item => item.category_name),
-                datasets: [{
-                    data: savingsData.map(item => item.total),
-                    backgroundColor: savingsData.map(item => item.category_color),
-                    borderColor: savingsData.map(item => this.adjustBrightness(item.category_color, -20)),
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Распределение по копилке'
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `${context.label}: ${this.formatCurrency(context.raw)}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    renderSavingsDailyChart() {
-        const ctx = document.getElementById('savingsDailyChart').getContext('2d');
-        if (!ctx) return;
-
-        this.savingsDailyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: this.savingsAnalytics.daily_totals.map(item => this.formatDate(item.date)),
-                datasets: [
-                    {
-                        label: 'Из копилки',
-                        data: this.savingsAnalytics.daily_totals.map(item => item.income),
-                        borderColor: '#8e44ad',
-                        backgroundColor: 'rgba(142, 68, 173, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'В копилку',
-                        data: this.savingsAnalytics.daily_totals.map(item => item.expense),
-                        borderColor: '#9b59b6',
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Движение средств копилки по дням'
+    this.savingsCategoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: savingsData.map(item => item.category_name),
+            datasets: [{
+                data: savingsData.map(item => item.total),
+                backgroundColor: savingsData.map(item => item.category_color),
+                borderColor: savingsData.map(item => this.adjustBrightness(item.category_color, -20)),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Распределение по копилке',
+                    font: {
+                        size: 16
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: (value) => this.formatCurrency(value)
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return `${context.label}: ${this.formatCurrency(context.raw)}`;
                         }
                     }
                 }
             }
-        });
-    }
+        }
+    });
+}
+
+    renderSavingsDailyChart() {
+    const ctx = document.getElementById('savingsDailyChart').getContext('2d');
+    if (!ctx) return;
+
+    // Используем специальные данные для копилки, а не общие
+    const dailyData = this.savingsAnalytics.savings_daily_totals || [];
+
+    this.savingsDailyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(item => this.formatDate(item.date)),
+            datasets: [
+                {
+                    label: 'В копилку',
+                    data: dailyData.map(item => item.savings_expense || 0), // Пополнения
+                    borderColor: '#27ae60', // ЗЕЛЕНЫЙ
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Из копилки',
+                    data: dailyData.map(item => item.savings_income || 0), // Снятия
+                    borderColor: '#e74c3c', // КРАСНЫЙ
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Движение средств копилки по дням',
+                    font: {
+                        size: 16
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return `${context.dataset.label}: ${this.formatCurrency(context.raw)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => this.formatCurrency(value)
+                    },
+                    title: {
+                        display: true,
+                        text: 'Сумма'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                }
+            }
+        }
+    });
+}
 
     adjustBrightness(hex, percent) {
         return hex;
