@@ -642,35 +642,95 @@ async addTransaction() {
         item => item.category_type === 'savings_income' || item.category_type === 'savings_expense'
     );
 
+    // Разделяем данные на "Из копилки" и "В копилку"
+    const withdrawalsData = savingsData.filter(item => item.category_type === 'savings_income');
+    const depositsData = savingsData.filter(item => item.category_type === 'savings_expense');
+
+    // Сортируем по убыванию суммы и берем топ-8 для читаемости
+    const topWithdrawals = withdrawalsData.sort((a, b) => b.total - a.total).slice(0, 8);
+    const topDeposits = depositsData.sort((a, b) => b.total - a.total).slice(0, 8);
+
     this.savingsCategoryChart = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
-            labels: savingsData.map(item => item.category_name),
-            datasets: [{
-                data: savingsData.map(item => item.total),
-                backgroundColor: savingsData.map(item => item.category_color),
-                borderColor: savingsData.map(item => this.adjustBrightness(item.category_color, -20)),
-                borderWidth: 2
-            }]
+            labels: [
+                ...topWithdrawals.map(item => item.category_name),
+                ...topDeposits.map(item => item.category_name)
+            ],
+            datasets: [
+                {
+                    label: 'Из копилки',
+                    data: [
+                        ...topWithdrawals.map(item => item.total),
+                        ...Array(topDeposits.length).fill(null) // Пустые значения для пополнений
+                    ],
+                    backgroundColor: topWithdrawals.map(item => item.category_color),
+                    borderColor: topWithdrawals.map(item => this.adjustBrightness(item.category_color, -20)),
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                },
+                {
+                    label: 'В копилку',
+                    data: [
+                        ...Array(topWithdrawals.length).fill(null), // Пустые значения для снятий
+                        ...topDeposits.map(item => item.total)
+                    ],
+                    backgroundColor: topDeposits.map(item => item.category_color),
+                    borderColor: topDeposits.map(item => this.adjustBrightness(item.category_color, -20)),
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            indexAxis: 'y', // Горизонтальные столбцы
             plugins: {
                 title: {
                     display: true,
-                    text: 'Распределение по копилке',
+                    text: 'Топ операций по копилке',
                     font: {
                         size: 16
                     }
                 },
-                legend: {
-                    position: 'bottom'
-                },
                 tooltip: {
                     callbacks: {
                         label: (context) => {
-                            return `${context.label}: ${this.formatCurrency(context.raw)}`;
+                            const value = context.raw;
+                            if (value === null) return '';
+                            return `${context.dataset.label}: ${this.formatCurrency(value)}`;
+                        }
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => this.formatCurrency(value)
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Сумма'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
                         }
                     }
                 }
