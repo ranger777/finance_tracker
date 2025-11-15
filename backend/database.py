@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 import os
 
-DATABASE_URL = "data/finance.db"
+DATABASE_URL = "../data/finance.db"
 
 
 def calculate_period_dates(period: str):
