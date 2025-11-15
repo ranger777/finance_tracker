@@ -129,7 +129,7 @@ async def get_analytics_data(request: AnalyticsRequest):
 async def get_savings_analytics(request: AnalyticsRequest):
     """Получить аналитику по копилке"""
     try:
-        # Для копилки всегда включаем savings транзакции
+        # Используем обычную аналитику, но с include_savings=True
         analytics, error = get_analytics(
             period=request.period,
             start_date=request.start_date,

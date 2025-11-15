@@ -42,12 +42,12 @@ def create_transaction(transaction: TransactionCreate):
         with get_db() as conn:
             # Проверяем существование категории
             category_exists = conn.execute(
-                "SELECT id, type FROM categories WHERE id = ?",
+                "SELECT id, type FROM categories WHERE id = ? AND is_active = TRUE",
                 (transaction.category_id,)
             ).fetchone()
 
             if not category_exists:
-                return None, "Категория не найдена"
+                return None, "Категория не найдена или неактивна"
 
             cursor = conn.execute(
                 "INSERT INTO transactions (amount, category_id, date, description) VALUES (?, ?, ?, ?)",
@@ -174,13 +174,18 @@ def get_analytics(period: str = "month", start_date: date = None, end_date: date
 
             daily_totals = conn.execute(daily_query, base_params).fetchall()
 
+            # Баланс = (В копилку) - (Из копилки)
+            savings_deposits = Decimal(str(savings_stats['savings_expense']))  # В копилку
+            savings_withdrawals = Decimal(str(savings_stats['savings_income']))  # Из копилки
+            savings_balance = savings_deposits - savings_withdrawals
+
             result = {
                 'total_income': Decimal(str(stats['total_income'])),
                 'total_expense': Decimal(str(stats['total_expense'])),
                 'balance': Decimal(str(stats['total_income'] - stats['total_expense'])),
-                'savings_income': Decimal(str(savings_stats['savings_income'])),
-                'savings_expense': Decimal(str(savings_stats['savings_expense'])),
-                'savings_balance': Decimal(str(savings_stats['savings_income'] - savings_stats['savings_expense'])),
+                'savings_income': savings_withdrawals,  # Из копилки
+                'savings_expense': savings_deposits,  # В копилку
+                'savings_balance': savings_balance,
                 'by_category': [dict(row) for row in by_category],
                 'daily_totals': [dict(row) for row in daily_totals],
                 'period': {

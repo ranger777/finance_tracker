@@ -59,11 +59,11 @@ def init_db():
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
+                type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'savings_income', 'savings_expense')),
                 color TEXT DEFAULT '#007bff',
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(name, type)  -- ⬅️ ИЗМЕНИЛИ: уникальность по паре (name, type)
+                UNIQUE(name, type)
             )
         ''')
 
@@ -82,6 +82,10 @@ def init_db():
 
         # Добавляем базовые категории (теперь можно иметь одинаковые имена с разными типами)
         default_categories = [
+            # копилка
+            ('Изъять на нужды', 'savings_income', '#ff0000'),
+            ('Накопления', 'savings_expense', '#00ff00'),
+
             # Доходы
             ('Пенсия', 'income', '#28a745'),
             ('Зарплата', 'income', '#20c997'),

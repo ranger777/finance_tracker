@@ -23,11 +23,24 @@ class FinanceTracker {
 
         this.setupEventListeners();
         await this.loadCategories();
+        // Проверяем наличие категорий для копилки
+        await this.ensureSavingsCategories();
         await this.loadTransactions();
         await this.loadAnalytics();
         await this.loadSavingsAnalytics();
         this.updateView();
     }
+
+    async ensureSavingsCategories() {
+    const savingsCategories = this.categories.filter(cat =>
+        cat.type === 'savings_income' || cat.type === 'savings_expense'
+    );
+
+    if (savingsCategories.length === 0) {
+        console.log('Категории для копилки не найдены, создаем автоматически...');
+        // Можно добавить автоматическое создание категорий или показать подсказку
+    }
+}
 
     setupEventListeners() {
         document.getElementById('transactionForm').addEventListener('submit', (e) => {
@@ -180,45 +193,54 @@ class FinanceTracker {
     }
 
     async loadSavingsAnalytics() {
-        try {
-            const request = {
-                period: this.currentPeriod,
-                group_by: 'category'
-            };
+    try {
+        const request = {
+            period: this.currentPeriod,
+            group_by: 'category'
+        };
 
-            if (this.currentPeriod === 'custom') {
-                const startDate = document.getElementById('startDate').value;
-                const endDate = document.getElementById('endDate').value;
-                if (startDate && endDate) {
-                    request.start_date = startDate;
-                    request.end_date = endDate;
-                }
+        if (this.currentPeriod === 'custom') {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
+                request.start_date = startDate;
+                request.end_date = endDate;
             }
-
-            this.savingsAnalytics = await this.apiCall('/analytics/savings', {
-                method: 'POST',
-                body: JSON.stringify(request)
-            });
-
-            this.updateSavingsStats();
-            this.renderSavingsCategoryAnalytics();
-            if (this.currentView === 'savings') {
-                this.renderSavingsCharts();
-            }
-        } catch (error) {
-            console.error('Failed to load savings analytics:', error);
         }
+
+        this.savingsAnalytics = await this.apiCall('/analytics/savings', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+
+        this.updateSavingsStats();
+        this.renderSavingsCategoryAnalytics();
+        if (this.currentView === 'savings') {
+            this.renderSavingsCharts();
+        }
+    } catch (error) {
+        console.error('Failed to load savings analytics:', error);
     }
+}
 
     updateCategorySelects() {
-        const categorySelect = document.getElementById('categorySelect');
-        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+    const categorySelect = document.getElementById('categorySelect');
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
 
-        const transactionType = document.getElementById('transactionType').value;
+    const transactionType = document.getElementById('transactionType').value;
 
-        // Фильтруем категории по выбранному типу
-        const filteredCategories = this.categories.filter(cat => cat.type === transactionType);
+    // Фильтруем категории по выбранному типу
+    const filteredCategories = this.categories.filter(cat => cat.type === transactionType);
 
+    if (filteredCategories.length === 0) {
+        // Если нет категорий для выбранного типа, показываем сообщение
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Сначала создайте категорию для этого типа';
+        option.disabled = true;
+        option.selected = true;
+        categorySelect.appendChild(option);
+    } else {
         filteredCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.id;
@@ -227,38 +249,44 @@ class FinanceTracker {
             categorySelect.appendChild(option);
         });
     }
+}
 
-    async addTransaction() {
-        const formData = {
-            amount: parseFloat(document.getElementById('amount').value),
-            category_id: parseInt(document.getElementById('categorySelect').value),
-            date: document.getElementById('date').value,
-            description: document.getElementById('description').value || ''
-        };
+async addTransaction() {
+    const categoryId = document.getElementById('categorySelect').value;
+    const amount = document.getElementById('amount').value;
 
-        if (!formData.amount || !formData.category_id) {
-            this.showSnackbar('Пожалуйста, заполните обязательные поля', 'error');
-            return;
-        }
-
-        try {
-            await this.apiCall('/transactions', {
-                method: 'POST',
-                body: JSON.stringify(formData)
-            });
-
-            document.getElementById('amount').value = '';
-            document.getElementById('description').value = '';
-
-            await this.loadTransactions();
-            await this.loadAnalytics();
-            await this.loadSavingsAnalytics();
-
-            this.showSnackbar('Транзакция успешно добавлена!');
-        } catch (error) {
-            console.error('Failed to add transaction:', error);
-        }
+    if (!amount || !categoryId) {
+        this.showSnackbar('Пожалуйста, заполните сумму и выберите категорию', 'error');
+        return;
     }
+
+    const formData = {
+        amount: parseFloat(amount),
+        category_id: parseInt(categoryId),
+        date: document.getElementById('date').value,
+        description: document.getElementById('description').value || ''
+    };
+
+    try {
+        await this.apiCall('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        });
+
+        // Очищаем форму
+        document.getElementById('amount').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('categorySelect').selectedIndex = 0;
+
+        await this.loadTransactions();
+        await this.loadAnalytics();
+        await this.loadSavingsAnalytics();
+
+        this.showSnackbar('Транзакция успешно добавлена!');
+    } catch (error) {
+        console.error('Failed to add transaction:', error);
+    }
+}
 
     async addCategory() {
         const formData = {
@@ -306,16 +334,22 @@ class FinanceTracker {
     }
 
     updateSavingsStats() {
-        if (!this.savingsAnalytics) return;
+    if (!this.savingsAnalytics) return;
 
-        document.getElementById('savingsIncome').textContent =
-            this.formatCurrency(this.savingsAnalytics.savings_income);
-        document.getElementById('savingsExpense').textContent =
-            this.formatCurrency(this.savingsAnalytics.savings_expense);
-        document.getElementById('savingsBalance').textContent =
-            this.formatCurrency(this.savingsAnalytics.savings_balance);
+    // Теперь логика правильная:
+    // savings_expense = В копилку (пополнения) - положительное число
+    // savings_income = Из копилки (снятия) - положительное число
+    // savings_balance = (В копилку) - (Из копилки)
 
-        const savingsBalanceCard = document.querySelector('.stat-card.savings-balance');
+    document.getElementById('savingsIncome').textContent =
+        this.formatCurrency(this.savingsAnalytics.savings_income);  // Из копилки
+    document.getElementById('savingsExpense').textContent =
+        this.formatCurrency(this.savingsAnalytics.savings_expense); // В копилку
+    document.getElementById('savingsBalance').textContent =
+        this.formatCurrency(this.savingsAnalytics.savings_balance); // Баланс
+
+    const savingsBalanceCard = document.querySelector('.stat-card.savings-balance');
+    if (savingsBalanceCard) {
         savingsBalanceCard.classList.remove('positive', 'negative');
         if (this.savingsAnalytics.savings_balance >= 0) {
             savingsBalanceCard.classList.add('positive');
@@ -323,6 +357,7 @@ class FinanceTracker {
             savingsBalanceCard.classList.add('negative');
         }
     }
+}
 
     renderTransactions() {
         const container = document.getElementById('transactionsList');
