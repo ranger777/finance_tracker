@@ -25,11 +25,20 @@ body {
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 2px solid #e1e8ed;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
 .header h1 {
     color: #2c3e50;
     font-size: 2.5rem;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
 .period-selector {
@@ -67,6 +76,236 @@ body {
     cursor: pointer;
 }
 
+.view-toggle {
+    display: flex;
+    gap: 0;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e1e8ed;
+    overflow: hidden;
+}
+
+.view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    background: white;
+    color: #5a6c7d;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-right: 1px solid #e1e8ed;
+    position: relative;
+}
+
+.view-btn:last-child {
+    border-right: none;
+}
+
+.view-btn:hover {
+    background: #f8f9fa;
+    color: #3498db;
+}
+
+/* Скрываем настоящий radio input */
+.view-btn input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Стиль для активной кнопки */
+.view-btn input[type="radio"]:checked + span {
+    background: #3498db;
+    color: white;
+}
+
+.view-btn input[type="radio"]:checked + span:hover {
+    background: #2980b9;
+}
+
+/* Стилизуем span как кнопку */
+.view-btn span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+/*.view-toggle {
+    display: flex;
+    gap: 15px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #e1e8ed;
+}*/
+
+.view-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.view-toggle label:hover {
+    background: #f8f9fa;
+}
+
+.view-toggle input[type="radio"] {
+    margin: 0;
+}
+
+/* Стили для страницы настроек */
+.settings-content {
+    padding: 0;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+}
+
+.settings-section h4 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.categories-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid;
+    transition: background-color 0.2s;
+}
+
+.category-setting-item:hover {
+    background: #e9ecef;
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.category-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.category-type {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.category-type.income {
+    background: #d4edda;
+    color: #155724;
+}
+
+.category-type.expense {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.category-type.savings_income {
+    background: #e8d6f7;
+    color: #4a235a;
+}
+
+.category-type.savings_expense {
+    background: #d6f7f7;
+    color: #235a5a;
+}
+
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.current-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.color-picker {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.color-picker::-webkit-color-swatch {
+    border: 2px solid #fff;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.color-picker::-moz-color-swatch {
+    border: 2px solid #fff;
+    border-radius: 4px;
+}
+
+.save-color-btn {
+    padding: 6px 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.save-color-btn:hover {
+    background: #218838;
+}
+
+.save-color-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.color-change-message {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 5px;
+    display: none;
+}
+
+.color-change-message.show {
+    display: block;
+}
+
 /* Карточки статистики */
 .stats-cards {
     display: grid;
@@ -82,6 +321,11 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
     border-left: 5px solid;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
 }
 
 .stat-card.income {
@@ -101,6 +345,29 @@ body {
 }
 
 .stat-card.balance.negative {
+    border-left-color: #e74c3c;
+}
+
+.stat-card.savings-income {
+    border-left-color: #8e44ad;
+    background: linear-gradient(135deg, #f8f5ff, #ffffff);
+}
+
+.stat-card.savings-expense {
+    border-left-color: #9b59b6;
+    background: linear-gradient(135deg, #f8f5ff, #ffffff);
+}
+
+.stat-card.savings-balance {
+    border-left-color: #8e44ad;
+    background: linear-gradient(135deg, #f8f5ff, #ffffff);
+}
+
+.stat-card.savings-balance.positive {
+    border-left-color: #8e44ad;
+}
+
+.stat-card.savings-balance.negative {
     border-left-color: #e74c3c;
 }
 
@@ -199,6 +466,11 @@ button:hover {
     background: #f8f9fa;
     border-radius: 8px;
     border-left: 4px solid;
+    transition: background-color 0.2s;
+}
+
+.transaction-item:hover {
+    background: #e9ecef;
 }
 
 .transaction-item.income {
@@ -207,6 +479,16 @@ button:hover {
 
 .transaction-item.expense {
     border-left-color: #e74c3c;
+}
+
+.transaction-item.savings_income {
+    border-left-color: #8e44ad;
+    background: #f8f5ff;
+}
+
+.transaction-item.savings_expense {
+    border-left-color: #9b59b6;
+    background: #f8f5ff;
 }
 
 .transaction-info {
@@ -249,6 +531,11 @@ button:hover {
     padding: 12px;
     background: #f8f9fa;
     border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.analytics-item:hover {
+    background: #e9ecef;
 }
 
 .category-info {
@@ -356,6 +643,11 @@ button:hover {
     .stats-cards {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
+
+    .header-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 @media (max-width: 768px) {
@@ -367,9 +659,20 @@ button:hover {
 
     .period-selector {
         flex-direction: column;
+        width: 100%;
+    }
+
+    .custom-dates {
+        flex-direction: column;
+        width: 100%;
     }
 
     .stats-cards {
         grid-template-columns: 1fr;
+    }
+
+    .view-toggle {
+        width: 100%;
+        justify-content: center;
     }
 }

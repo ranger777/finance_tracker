@@ -3,16 +3,13 @@ from datetime import date, datetime
 from typing import Optional, List
 from decimal import Decimal
 
-
 class CategoryBase(BaseModel):
     name: str
-    type: str  # 'income' или 'expense'
+    type: str  # 'income', 'expense', 'savings_income', 'savings_expense'
     color: Optional[str] = '#007bff'
-
 
 class CategoryCreate(CategoryBase):
     pass
-
 
 class Category(CategoryBase):
     id: int
@@ -22,17 +19,14 @@ class Category(CategoryBase):
     class Config:
         from_attributes = True
 
-
 class TransactionBase(BaseModel):
     amount: Decimal
     category_id: int
     date: date
     description: Optional[str] = None
 
-
 class TransactionCreate(TransactionBase):
     pass
-
 
 class Transaction(TransactionBase):
     id: int
@@ -41,19 +35,17 @@ class Transaction(TransactionBase):
     class Config:
         from_attributes = True
 
-
 class TransactionWithCategory(Transaction):
     category_name: str
     category_type: str
     category_color: str
 
-
 class AnalyticsRequest(BaseModel):
-    period: str = "month"  # 'today', 'week', 'month', 'quarter', 'year', 'custom', 'all'
+    period: str = "month"
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    group_by: Optional[str] = 'category'  # 'category', 'day'
-
+    group_by: Optional[str] = 'category'
+    include_savings: bool = False  # Новый параметр
 
 class AnalyticsResponse(BaseModel):
     total_income: Decimal
@@ -61,4 +53,9 @@ class AnalyticsResponse(BaseModel):
     balance: Decimal
     by_category: List[dict]
     daily_totals: List[dict]
+    savings_daily_totals: List[dict]  # НОВОЕ ПОЛЕ
     period: dict
+    # Для копилки
+    savings_income: Optional[Decimal] = Decimal('0')
+    savings_expense: Optional[Decimal] = Decimal('0')
+    savings_balance: Optional[Decimal] = Decimal('0')
