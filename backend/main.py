@@ -39,8 +39,16 @@ def get_password_hash(password: str):
 
 def verify_password(plain_password: str, hashed_password: str):
     if not hashed_password:
+        print("❌ [AUTH] No hash to verify")
         return False
-    return pwd_context.verify(plain_password, hashed_password)
+    print(f"🔐 [AUTH] Verifying: '{plain_password}' against hash")
+    try:
+        result = pwd_context.verify(plain_password, hashed_password)
+        print(f"🔐 [AUTH] Verification result: {result}")
+        return result
+    except Exception as e:
+        print(f"❌ [AUTH] Verification error: {e}")
+        return False
 
 
 def get_app_settings():
@@ -176,10 +184,15 @@ async def setup_password(credentials: PasswordSetup):
 @app.post("/api/auth/login")
 async def login(credentials: LoginRequest):
     """Аутентификация пользователя"""
+    print(f"🔐 [BACKEND] Login request received")
+    print(f"🔐 [BACKEND] Password length: {len(credentials.password)}")
+    print(f"🔐 [BACKEND] Password value: '{credentials.password}'")
+
     settings = get_app_settings()
 
     # Если пароль еще не установлен
     if not settings or not settings.get('password_hash'):
+        print("❌ [BACKEND] No password set")
         return JSONResponse(
             status_code=400,
             content={"detail": "Сначала установите пароль"}
@@ -187,10 +200,18 @@ async def login(credentials: LoginRequest):
 
     password = credentials.password
 
-    if verify_password(password, settings['password_hash']):
+    print(f"🔐 [BACKEND] Stored hash: {settings['password_hash']}")
+    print(f"🔐 [BACKEND] Verifying password...")
+
+    is_valid = verify_password(password, settings['password_hash'])
+    print(f"🔐 [BACKEND] Password valid: {is_valid}")
+
+    if is_valid:
         token = create_auth_token()
+        print("✅ [BACKEND] Login successful")
         return {"success": True, "token": token}
     else:
+        print("❌ [BACKEND] Invalid password")
         return JSONResponse(
             status_code=401,
             content={"detail": "Неверный пароль"}

@@ -36,6 +36,56 @@ class FinanceTracker {
         }
     }
 
+    async changePassword() {
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const newPasswordConfirm = document.getElementById('newPasswordConfirm').value;
+
+        const messageElement = document.getElementById('changePasswordMessage');
+        messageElement.style.display = 'none';
+
+        // Валидация
+        if (!oldPassword || !newPassword || !newPasswordConfirm) {
+            this.showMessage(messageElement, 'Заполните все поля', 'error');
+            return;
+        }
+
+        if (newPassword !== newPasswordConfirm) {
+            this.showMessage(messageElement, 'Новые пароли не совпадают', 'error');
+            return;
+        }
+
+        if (newPassword.length < 4) {
+            this.showMessage(messageElement, 'Пароль должен быть не менее 4 символов', 'error');
+            return;
+        }
+
+        try {
+            const result = await this.apiCall('/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({
+                    old_password: oldPassword,
+                    new_password: newPassword,
+                    new_password_confirm: newPasswordConfirm
+                })
+            });
+
+            if (result.success) {
+                this.showMessage(messageElement, 'Пароль успешно изменен!', 'success');
+                document.getElementById('changePasswordForm').reset();
+                this.showSnackbar('Пароль успешно изменен!');
+            }
+        } catch (error) {
+            this.showMessage(messageElement, error.message, 'error');
+        }
+    }
+
+    showMessage(element, message, type) {
+        element.textContent = message;
+        element.className = type === 'success' ? 'success-message' : 'error-message';
+        element.style.display = 'block';
+    }
+
     setupAuthEventListeners() {
         const loginForm = document.getElementById('loginForm');
         const setupForm = document.getElementById('setupForm');
@@ -54,6 +104,7 @@ class FinanceTracker {
             };
         }
     }
+
 
     async checkAuthStatus() {
         try {
@@ -84,17 +135,17 @@ class FinanceTracker {
     }
 
     showAuthForm() {
-    document.getElementById('mainApp').style.display = 'none';
-    if (this.passwordSet) {
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('setupOverlay').style.display = 'none';
-    } else {
-        document.getElementById('setupOverlay').style.display = 'flex';
-        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'none';
+        if (this.passwordSet) {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('setupOverlay').style.display = 'none';
+        } else {
+            document.getElementById('setupOverlay').style.display = 'flex';
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+        // ДОБАВЬТЕ ЭТУ СТРОКУ:
+        this.setupAuthEventListeners();
     }
-    // ДОБАВЬТЕ ЭТУ СТРОКУ:
-    this.setupAuthEventListeners();
-}
 
     hideAuthForms() {
         document.getElementById('loginOverlay').style.display = 'none';
@@ -184,6 +235,12 @@ class FinanceTracker {
             this.setupPassword();
         });
 
+        // ДОБАВЬТЕ ЭТОТ ОБРАБОТЧИК ДЛЯ ФОРМЫ СМЕНЫ ПАРОЛЯ
+        document.getElementById('changePasswordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.changePassword();
+        });
+
         document.getElementById('periodSelect').addEventListener('change', (e) => {
             this.currentPeriod = e.target.value;
             localStorage.setItem('selectedPeriod', this.currentPeriod);
@@ -262,6 +319,9 @@ class FinanceTracker {
 
     async login() {
         const password = document.getElementById('password').value;
+        console.log('🔐 [FRONTEND] Login attempt, password length:', password.length);
+        console.log('🔐 [FRONTEND] Password value:', `"${password}"`);
+
         document.getElementById('loginError').style.display = 'none';
         try {
             const result = await this.apiCall('/auth/login', {
@@ -270,7 +330,9 @@ class FinanceTracker {
                     password: password
                 })
             }, false);
+
             if (result.success) {
+                console.log('✅ [FRONTEND] Login successful');
                 this.authToken = JSON.stringify(result.token);
                 localStorage.setItem('authToken', this.authToken);
                 this.isAuthenticated = true;
@@ -279,6 +341,7 @@ class FinanceTracker {
                 this.showSnackbar('Успешный вход!');
             }
         } catch (error) {
+            console.error('❌ [FRONTEND] Login failed:', error);
             document.getElementById('loginError').textContent = error.message;
             document.getElementById('loginError').style.display = 'block';
         }
