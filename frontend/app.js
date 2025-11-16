@@ -116,10 +116,17 @@ class FinanceTracker {
                 ...options
             });
 
-            const data = await response.json();
+            // Пробуем распарсить ответ независимо от статуса
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = {detail: `Ошибка парсинга ответа: ${e.message}`};
+            }
 
             if (!response.ok) {
-                const errorMessage = data.detail || `Ошибка ${response.status}`;
+                // Извлекаем сообщение об ошибке из разных возможных форматов
+                const errorMessage = data.detail || data.message || data.error || `Ошибка ${response.status}`;
                 this.showSnackbar(errorMessage, 'error');
                 throw new Error(errorMessage);
             }
@@ -128,7 +135,16 @@ class FinanceTracker {
 
         } catch (error) {
             console.error('API call failed:', error);
-            throw error;
+
+            // Если это уже наша ошибка с сообщением - пробрасываем дальше
+            if (error.message && error.message !== 'Failed to fetch') {
+                throw error;
+            }
+
+            // Для сетевых ошибок показываем понятное сообщение
+            const errorMessage = 'Не удалось подключиться к серверу. Проверьте, запущен ли бекенд.';
+            this.showSnackbar(errorMessage, 'error');
+            throw new Error(errorMessage);
         }
     }
 
@@ -281,6 +297,9 @@ class FinanceTracker {
             await this.loadTransactions();
             await this.loadAnalytics();
             await this.loadSavingsAnalytics();
+            if (this.currentView === 'edit') {
+                this.loadTransactionsForEdit();
+            }
 
             this.showSnackbar('Транзакция успешно добавлена!');
         } catch (error) {
@@ -680,12 +699,21 @@ class FinanceTracker {
         const form = document.querySelector(`[data-transaction-id="${transactionId}"]`);
         const formData = new FormData(form);
 
+        // ВСЕГДА отправляем все поля
         const updateData = {
-            date: formData.get('date'),
-            category_id: parseInt(formData.get('category_id')),
             amount: parseFloat(formData.get('amount')),
+            category_id: parseInt(formData.get('category_id')),
+            date: formData.get('date'), // всегда есть из required поля
             description: formData.get('description') || ''
         };
+
+        // Базовая валидация
+        if (!updateData.date || !updateData.amount || !updateData.category_id) {
+            this.showSnackbar('Заполните все обязательные поля', 'error');
+            return;
+        }
+
+        console.log('Sending update data:', updateData);
 
         try {
             await this.apiCall(`/transactions/${transactionId}`, {

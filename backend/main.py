@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 import sqlite3
 import os
@@ -25,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/api/categories", response_model=list[Category])
 async def read_categories(category_type: Optional[str] = None):
     """Получить список категорий"""
@@ -42,6 +43,7 @@ async def read_categories(category_type: Optional[str] = None):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
+
 @app.post("/api/categories")
 async def create_new_category(category: CategoryCreate):
     """Создать новую категорию"""
@@ -58,6 +60,7 @@ async def create_new_category(category: CategoryCreate):
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
+
 
 @app.get("/api/transactions")
 async def read_transactions(
@@ -84,6 +87,7 @@ async def read_transactions(
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
+
 @app.post("/api/transactions")
 async def create_new_transaction(transaction: TransactionCreate):
     """Создать новую транзакцию"""
@@ -100,6 +104,7 @@ async def create_new_transaction(transaction: TransactionCreate):
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
+
 
 @app.post("/api/analytics", response_model=AnalyticsResponse)
 async def get_analytics_data(request: AnalyticsRequest):
@@ -123,6 +128,7 @@ async def get_analytics_data(request: AnalyticsRequest):
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
+
 
 # Новый endpoint для статистики копилки
 @app.post("/api/analytics/savings", response_model=AnalyticsResponse)
@@ -148,6 +154,7 @@ async def get_savings_analytics(request: AnalyticsRequest):
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
+
 
 @app.get("/api/periods")
 async def get_available_periods():
@@ -198,44 +205,82 @@ async def update_category(category_id: int, category_update: dict):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
-# Добавить в main.py
+
+from pydantic import ValidationError
+
+
 @app.put("/api/transactions/{transaction_id}")
-async def update_transaction(transaction_id: int, transaction_update: TransactionUpdate):
+async def update_transaction(transaction_id: int, transaction_update: dict):
     """Обновить транзакцию"""
     try:
-        transaction_id, error = update_transaction(transaction_id, transaction_update)
+        print(f"Received update data: {transaction_update}")
+
+        # Преобразуем строку даты в объект date (всегда должна быть)
+        if 'date' in transaction_update and transaction_update['date']:
+            try:
+                if isinstance(transaction_update['date'], str):
+                    transaction_update['date'] = datetime.strptime(transaction_update['date'], '%Y-%m-%d').date()
+            except ValueError:
+                return JSONResponse(
+                    status_code=422,
+                    content={"detail": "Неверный формат даты. Используйте YYYY-MM-DD"}
+                )
+
+        # Преобразуем amount в Decimal (всегда должен быть)
+        if 'amount' in transaction_update:
+            try:
+                transaction_update['amount'] = Decimal(str(transaction_update['amount']))
+            except:
+                return JSONResponse(
+                    status_code=422,
+                    content={"detail": "Неверный формат суммы"}
+                )
+
+        # Валидируем данные
+        try:
+            validated_data = TransactionUpdate(**transaction_update)
+        except ValidationError as e:
+            return JSONResponse(
+                status_code=422,
+                content={"detail": f"Ошибка валидации: {e}"}
+            )
+
+        updated_id, error = update_transaction_crud(transaction_id, validated_data)
         if error:
             return JSONResponse(
                 status_code=400,
                 content={"detail": error}
             )
-        return {"id": transaction_id, "status": "updated"}
+        return {"id": updated_id, "status": "updated"}
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
+
 @app.delete("/api/transactions/{transaction_id}")
-async def delete_transaction(transaction_id: int):
+async def delete_transaction_endpoint(transaction_id: int):
     """Удалить транзакцию"""
     try:
-        transaction_id, error = delete_transaction(transaction_id)
+        deleted_id, error = delete_transaction_crud(transaction_id)
         if error:
             return JSONResponse(
                 status_code=400,
                 content={"detail": error}
             )
-        return {"id": transaction_id, "status": "deleted"}
+        return {"id": deleted_id, "status": "deleted"}
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
+
 
 @app.get("/")
 async def serve_frontend():
     return FileResponse("../frontend/index.html")
+
 
 app.mount("/", StaticFiles(directory="../frontend"), name="frontend")
 

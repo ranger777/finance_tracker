@@ -89,8 +89,8 @@ def get_transactions(start_date: date = None, end_date: date = None, include_sav
         return None, f"Ошибка базы данных: {str(e)}"
 
 
-# Добавить в crud.py
-def update_transaction(transaction_id: int, transaction_update: TransactionUpdate):
+# ПЕРЕИМЕНОВАЛИ ФУНКЦИЮ чтобы избежать конфликта имен
+def update_transaction_crud(transaction_id: int, transaction_update: TransactionUpdate):
     """Обновить транзакцию"""
     try:
         with get_db() as conn:
@@ -103,44 +103,26 @@ def update_transaction(transaction_id: int, transaction_update: TransactionUpdat
             if not transaction_exists:
                 return None, "Транзакция не найдена"
 
-            # Собираем поля для обновления
-            update_fields = []
-            params = []
+            # Проверяем существование категории
+            category_exists = conn.execute(
+                "SELECT id FROM categories WHERE id = ? AND is_active = TRUE",
+                (transaction_update.category_id,)
+            ).fetchone()
 
-            if transaction_update.amount is not None:
-                update_fields.append("amount = ?")
-                params.append(float(transaction_update.amount))
+            if not category_exists:
+                return None, "Категория не найдена или неактивна"
 
-            if transaction_update.category_id is not None:
-                # Проверяем существование категории
-                category_exists = conn.execute(
-                    "SELECT id FROM categories WHERE id = ? AND is_active = TRUE",
-                    (transaction_update.category_id,)
-                ).fetchone()
-
-                if not category_exists:
-                    return None, "Категория не найдена или неактивна"
-
-                update_fields.append("category_id = ?")
-                params.append(transaction_update.category_id)
-
-            if transaction_update.date is not None:
-                update_fields.append("date = ?")
-                params.append(transaction_update.date)
-
-            if transaction_update.description is not None:
-                update_fields.append("description = ?")
-                params.append(transaction_update.description)
-
-            if not update_fields:
-                return None, "Нет полей для обновления"
-
-            # Добавляем ID транзакции в параметры
-            params.append(transaction_id)
-
-            # Выполняем обновление
-            query = f"UPDATE transactions SET {', '.join(update_fields)} WHERE id = ?"
-            conn.execute(query, params)
+            # ОБНОВЛЯЕМ ВСЕ ПОЛЯ БЕЗ ПРОВЕРОК
+            conn.execute(
+                "UPDATE transactions SET amount = ?, category_id = ?, date = ?, description = ? WHERE id = ?",
+                (
+                    float(transaction_update.amount),
+                    transaction_update.category_id,
+                    transaction_update.date,
+                    transaction_update.description,
+                    transaction_id
+                )
+            )
             conn.commit()
 
             return transaction_id, None
@@ -149,7 +131,8 @@ def update_transaction(transaction_id: int, transaction_update: TransactionUpdat
         return None, f"Ошибка базы данных: {str(e)}"
 
 
-def delete_transaction(transaction_id: int):
+# ПЕРЕИМЕНОВАЛИ ФУНКЦИЮ чтобы избежать конфликта имен
+def delete_transaction_crud(transaction_id: int):
     """Удалить транзакцию"""
     try:
         with get_db() as conn:
