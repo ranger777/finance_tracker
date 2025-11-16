@@ -59,3 +59,9 @@ class AnalyticsResponse(BaseModel):
     savings_income: Optional[Decimal] = Decimal('0')
     savings_expense: Optional[Decimal] = Decimal('0')
     savings_balance: Optional[Decimal] = Decimal('0')
+
+class TransactionUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    category_id: Optional[int] = None
+    date: Optional[date] = None
+    description: Optional[str] = None

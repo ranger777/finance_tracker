@@ -198,6 +198,41 @@ async def update_category(category_id: int, category_update: dict):
             content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
         )
 
+# Добавить в main.py
+@app.put("/api/transactions/{transaction_id}")
+async def update_transaction(transaction_id: int, transaction_update: TransactionUpdate):
+    """Обновить транзакцию"""
+    try:
+        transaction_id, error = update_transaction(transaction_id, transaction_update)
+        if error:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": error}
+            )
+        return {"id": transaction_id, "status": "updated"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
+        )
+
+@app.delete("/api/transactions/{transaction_id}")
+async def delete_transaction(transaction_id: int):
+    """Удалить транзакцию"""
+    try:
+        transaction_id, error = delete_transaction(transaction_id)
+        if error:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": error}
+            )
+        return {"id": transaction_id, "status": "deleted"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Внутренняя ошибка сервера: {str(e)}"}
+        )
+
 @app.get("/")
 async def serve_frontend():
     return FileResponse("../frontend/index.html")

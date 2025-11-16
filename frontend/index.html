@@ -52,6 +52,10 @@
                     <input type="radio" name="view" value="settings" onchange="switchView('settings')">
                     <span>Настройки</span>
                 </label>
+                <label class="view-btn">
+                    <input type="radio" name="view" value="edit" onchange="switchView('edit')">
+                    <span>Редактировать<br>транзакции</span>
+                </label>
             </div>
         </div>
     </header>
@@ -193,6 +197,28 @@
                             <!-- Категории будут загружены здесь -->
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- блок для редактирования -->
+            <div class="card edit-view" style="display: none;"> <!-- ИЗМЕНИТЕ КЛАСС -->
+                <h3>✏️ Редактирование транзакций</h3>
+
+                <!-- Пагинация -->
+                <div class="pagination-controls">
+                    <button id="prevPage" onclick="app.prevPage()">← Назад</button>
+                    <span id="pageInfo">Страница 1 из 1</span>
+                    <button id="nextPage" onclick="app.nextPage()">Вперед →</button>
+                    <select id="pageSize" onchange="app.changePageSize()">
+                        <option value="10">10 на странице</option>
+                        <option value="20">20 на странице</option>
+                        <option value="50">50 на странице</option>
+                    </select>
+                </div>
+
+                <!-- Список транзакций для редактирования -->
+                <div id="editTransactionsList" class="edit-transactions-list">
+                    <!-- Транзакции будут здесь -->
                 </div>
             </div>
 

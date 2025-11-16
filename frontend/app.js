@@ -13,6 +13,10 @@ class FinanceTracker {
         this.savingsCategoryChart = null;
         this.savingsDailyChart = null;
 
+        this.currentPage = 1;
+        this.pageSize = 10;
+        this.totalTransactions = 0;
+
         this.init();
     }
 
@@ -82,7 +86,7 @@ class FinanceTracker {
 
     updateView() {
         // Показываем/скрываем элементы
-        const views = ['main', 'savings', 'settings'];
+        const views = ['main', 'savings', 'settings', 'edit']; // ДОБАВЬТЕ 'edit' в массив
         views.forEach(viewType => {
             const elements = document.querySelectorAll(`.${viewType}-view`);
             elements.forEach(el => {
@@ -95,6 +99,10 @@ class FinanceTracker {
             this.renderCharts();
         } else if (this.currentView === 'savings' && this.savingsAnalytics) {
             this.renderSavingsCharts();
+        }
+        // ДОБАВЬТЕ этот блок для edit view:
+        else if (this.currentView === 'edit') {
+            this.loadTransactionsForEdit();
         }
     }
 
@@ -440,7 +448,7 @@ class FinanceTracker {
         // Сортируем категории: сначала по типу, потом по имени
         const sortedCategories = [...this.categories].sort((a, b) => {
             if (a.type !== b.type) {
-                const typeOrder = { 'income': 1, 'expense': 2, 'savings_income': 3, 'savings_expense': 4 };
+                const typeOrder = {'income': 1, 'expense': 2, 'savings_income': 3, 'savings_expense': 4};
                 return typeOrder[a.type] - typeOrder[b.type];
             }
             return a.name.localeCompare(b.name);
@@ -502,90 +510,263 @@ class FinanceTracker {
 
     // НОВЫЙ МЕТОД: Сохранение цвета категории
     async saveCategoryColor(categoryId) {
-    const colorPicker = document.querySelector(`.color-picker[data-category-id="${categoryId}"]`);
-    const saveButton = document.querySelector(`.save-color-btn[data-category-id="${categoryId}"]`);
-    const message = document.getElementById(`message-${categoryId}`);
+        const colorPicker = document.querySelector(`.color-picker[data-category-id="${categoryId}"]`);
+        const saveButton = document.querySelector(`.save-color-btn[data-category-id="${categoryId}"]`);
+        const message = document.getElementById(`message-${categoryId}`);
 
-    if (!colorPicker || !saveButton) return;
+        if (!colorPicker || !saveButton) return;
 
-    const newColor = colorPicker.value;
+        const newColor = colorPicker.value;
 
-    try {
-        // Отправляем запрос на обновление цвета
-        await this.apiCall(`/categories/${categoryId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ color: newColor })
+        try {
+            // Отправляем запрос на обновление цвета
+            await this.apiCall(`/categories/${categoryId}`, {
+                method: 'PUT',
+                body: JSON.stringify({color: newColor})
+            });
+
+            // Обновляем локальные данные
+            const category = this.categories.find(cat => cat.id === categoryId);
+            if (category) {
+                category.color = newColor;
+            }
+
+            // Обновляем визуальное отображение в настройках
+            const categoryItem = saveButton.closest('.category-setting-item');
+            if (categoryItem) {
+                categoryItem.style.borderLeftColor = newColor;
+                const currentColorSpan = categoryItem.querySelector('.current-color');
+                if (currentColorSpan) {
+                    currentColorSpan.style.background = newColor;
+                }
+            }
+
+            // Деактивируем кнопку
+            saveButton.disabled = true;
+
+            // Показываем сообщение об успехе
+            if (message) {
+                message.classList.add('show');
+                setTimeout(() => {
+                    message.classList.remove('show');
+                }, 3000);
+            }
+
+            // Параллельно загружаем обновленные данные
+            await Promise.all([
+                this.loadCategories(),
+                this.loadTransactions(),
+                this.loadAnalytics(),
+                this.loadSavingsAnalytics()
+            ]);
+
+            // Перерисовываем графики в зависимости от текущего вида
+            if (this.currentView === 'main') {
+                this.destroyCharts();
+                setTimeout(() => this.renderCharts(), 150);
+            } else if (this.currentView === 'savings') {
+                this.destroySavingsCharts();
+                setTimeout(() => this.renderSavingsCharts(), 150);
+            }
+
+            this.showSnackbar('Цвет категории успешно изменен!');
+
+        } catch (error) {
+            console.error('Failed to update category color:', error);
+
+            // Восстанавливаем старый цвет в пикере в случае ошибки
+            if (category) {
+                colorPicker.value = category.color;
+            }
+            this.showSnackbar('Ошибка при изменении цвета категории', 'error');
+        }
+    }
+
+
+// Добавить методы:
+    switchToEditView() {
+        this.currentView = 'edit';
+        this.updateView();
+        this.loadTransactionsForEdit();
+    }
+
+    loadTransactionsForEdit() {
+        this.renderEditTransactions();
+    }
+
+    renderEditTransactions() {
+        const container = document.getElementById('editTransactionsList');
+        if (!container) return;
+
+        // Пагинация
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const pageTransactions = this.transactions.slice(startIndex, endIndex);
+        this.totalTransactions = this.transactions.length;
+
+        container.innerHTML = '';
+
+        if (pageTransactions.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">Транзакций нет</p>';
+            return;
+        }
+
+        pageTransactions.forEach(transaction => {
+            const transactionDiv = document.createElement('div');
+            transactionDiv.className = `edit-transaction-item ${transaction.category_type}`;
+            transactionDiv.style.borderLeftColor = transaction.category_color;
+
+            const category = this.categories.find(cat => cat.id === transaction.category_id);
+
+            transactionDiv.innerHTML = `
+            <form class="edit-transaction-form" data-transaction-id="${transaction.id}">
+                <div class="edit-form-group">
+                    <label>Дата</label>
+                    <input type="date" name="date" value="${transaction.date}" required>
+                </div>
+                <div class="edit-form-group">
+                    <label>Тип</label>
+                    <select name="type" onchange="app.updateEditCategories(${transaction.id})" required>
+                        <option value="income" ${transaction.category_type === 'income' ? 'selected' : ''}>Доход</option>
+                        <option value="expense" ${transaction.category_type === 'expense' ? 'selected' : ''}>Расход</option>
+                        <option value="savings_income" ${transaction.category_type === 'savings_income' ? 'selected' : ''}>Из копилки</option>
+                        <option value="savings_expense" ${transaction.category_type === 'savings_expense' ? 'selected' : ''}>В копилку</option>
+                    </select>
+                </div>
+                <div class="edit-form-group">
+                    <label>Категория</label>
+                    <select name="category_id" required>
+                        ${this.getCategoryOptions(transaction.category_type, transaction.category_id)}
+                    </select>
+                </div>
+                <div class="edit-form-group">
+                    <label>Сумма</label>
+                    <input type="number" name="amount" step="0.01" min="0" value="${transaction.amount}" required>
+                </div>
+                <div class="edit-form-group">
+                    <label>Описание</label>
+                    <input type="text" name="description" value="${transaction.description || ''}">
+                </div>
+                <div class="transaction-actions">
+                    <button type="button" class="save-btn" onclick="app.saveTransaction(${transaction.id})">💾</button>
+                    <button type="button" class="delete-btn" onclick="app.deleteTransaction(${transaction.id})">🗑️</button>
+                </div>
+            </form>
+        `;
+
+            container.appendChild(transactionDiv);
         });
 
-        // Обновляем локальные данные
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (category) {
-            category.color = newColor;
-        }
-
-        // Обновляем визуальное отображение в настройках
-        const categoryItem = saveButton.closest('.category-setting-item');
-        if (categoryItem) {
-            categoryItem.style.borderLeftColor = newColor;
-            const currentColorSpan = categoryItem.querySelector('.current-color');
-            if (currentColorSpan) {
-                currentColorSpan.style.background = newColor;
-            }
-        }
-
-        // Деактивируем кнопку
-        saveButton.disabled = true;
-
-        // Показываем сообщение об успехе
-        if (message) {
-            message.classList.add('show');
-            setTimeout(() => {
-                message.classList.remove('show');
-            }, 3000);
-        }
-
-        // Параллельно загружаем обновленные данные
-        await Promise.all([
-            this.loadCategories(),
-            this.loadTransactions(),
-            this.loadAnalytics(),
-            this.loadSavingsAnalytics()
-        ]);
-
-        // Перерисовываем графики в зависимости от текущего вида
-        if (this.currentView === 'main') {
-            this.destroyCharts();
-            setTimeout(() => this.renderCharts(), 150);
-        } else if (this.currentView === 'savings') {
-            this.destroySavingsCharts();
-            setTimeout(() => this.renderSavingsCharts(), 150);
-        }
-
-        this.showSnackbar('Цвет категории успешно изменен!');
-
-    } catch (error) {
-        console.error('Failed to update category color:', error);
-
-        // Восстанавливаем старый цвет в пикере в случае ошибки
-        if (category) {
-            colorPicker.value = category.color;
-        }
-        this.showSnackbar('Ошибка при изменении цвета категории', 'error');
+        this.updatePagination();
     }
-}
+
+    getCategoryOptions(type, selectedId) {
+        const filteredCategories = this.categories.filter(cat => cat.type === type);
+        return filteredCategories.map(cat =>
+            `<option value="${cat.id}" ${cat.id === selectedId ? 'selected' : ''}>${cat.name}</option>`
+        ).join('');
+    }
+
+    updateEditCategories(transactionId) {
+        const form = document.querySelector(`[data-transaction-id="${transactionId}"]`);
+        const typeSelect = form.querySelector('select[name="type"]');
+        const categorySelect = form.querySelector('select[name="category_id"]');
+
+        const selectedType = typeSelect.value;
+        categorySelect.innerHTML = this.getCategoryOptions(selectedType);
+    }
+
+    async saveTransaction(transactionId) {
+        const form = document.querySelector(`[data-transaction-id="${transactionId}"]`);
+        const formData = new FormData(form);
+
+        const updateData = {
+            date: formData.get('date'),
+            category_id: parseInt(formData.get('category_id')),
+            amount: parseFloat(formData.get('amount')),
+            description: formData.get('description') || ''
+        };
+
+        try {
+            await this.apiCall(`/transactions/${transactionId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateData)
+            });
+
+            await this.loadTransactions();
+            await this.loadAnalytics();
+            await this.loadSavingsAnalytics();
+            this.loadTransactionsForEdit();
+
+            this.showSnackbar('Транзакция успешно обновлена!');
+        } catch (error) {
+            console.error('Failed to update transaction:', error);
+        }
+    }
+
+    async deleteTransaction(transactionId) {
+        if (!confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
+            return;
+        }
+
+        try {
+            await this.apiCall(`/transactions/${transactionId}`, {
+                method: 'DELETE'
+            });
+
+            await this.loadTransactions();
+            await this.loadAnalytics();
+            await this.loadSavingsAnalytics();
+            this.loadTransactionsForEdit();
+
+            this.showSnackbar('Транзакция успешно удалена!');
+        } catch (error) {
+            console.error('Failed to delete transaction:', error);
+        }
+    }
+
+    updatePagination() {
+        const totalPages = Math.ceil(this.totalTransactions / this.pageSize);
+        document.getElementById('pageInfo').textContent = `Страница ${this.currentPage} из ${totalPages}`;
+
+        document.getElementById('prevPage').disabled = this.currentPage <= 1;
+        document.getElementById('nextPage').disabled = this.currentPage >= totalPages;
+    }
+
+    prevPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.loadTransactionsForEdit();
+        }
+    }
+
+    nextPage() {
+        const totalPages = Math.ceil(this.totalTransactions / this.pageSize);
+        if (this.currentPage < totalPages) {
+            this.currentPage++;
+            this.loadTransactionsForEdit();
+        }
+    }
+
+    changePageSize() {
+        const newSize = parseInt(document.getElementById('pageSize').value);
+        this.pageSize = newSize;
+        this.currentPage = 1;
+        this.loadTransactionsForEdit();
+    }
 
     renderCharts() {
-    if (!this.analytics) return;
+        if (!this.analytics) return;
 
-    // УБЕДИТЕСЬ, ЧТО СТАРЫЕ ГРАФИКИ УНИЧТОЖАЮТСЯ ПЕРЕД СОЗДАНИЕМ НОВЫХ
-    this.destroyCharts();
+        // УБЕДИТЕСЬ, ЧТО СТАРЫЕ ГРАФИКИ УНИЧТОЖАЮТСЯ ПЕРЕД СОЗДАНИЕМ НОВЫХ
+        this.destroyCharts();
 
-    // Добавьте небольшую задержку для гарантии очистки
-    setTimeout(() => {
-        this.renderCategoryChart();
-        this.renderDailyChart();
-    }, 100);
-}
+        // Добавьте небольшую задержку для гарантии очистки
+        setTimeout(() => {
+            this.renderCategoryChart();
+            this.renderDailyChart();
+        }, 100);
+    }
 
     renderSavingsCharts() {
         if (!this.savingsAnalytics) return;
@@ -618,111 +799,111 @@ class FinanceTracker {
     }
 
     renderCategoryChart() {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    if (!ctx) return;
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        if (!ctx) return;
 
-    const incomeData = this.analytics.by_category.filter(item => item.category_type === 'income');
-    const expenseData = this.analytics.by_category.filter(item => item.category_type === 'expense');
+        const incomeData = this.analytics.by_category.filter(item => item.category_type === 'income');
+        const expenseData = this.analytics.by_category.filter(item => item.category_type === 'expense');
 
-    const topIncomes = incomeData.sort((a, b) => b.total - a.total).slice(0, 8);
-    const topExpenses = expenseData.sort((a, b) => b.total - a.total).slice(0, 8);
+        const topIncomes = incomeData.sort((a, b) => b.total - a.total).slice(0, 8);
+        const topExpenses = expenseData.sort((a, b) => b.total - a.total).slice(0, 8);
 
-    // ОТЛАДКА - проверим все цвета
-    console.log('Top incomes:', topIncomes.map(item => ({name: item.category_name, color: item.category_color})));
-    console.log('Top expenses:', topExpenses.map(item => ({name: item.category_name, color: item.category_color})));
+        // ОТЛАДКА - проверим все цвета
+        console.log('Top incomes:', topIncomes.map(item => ({name: item.category_name, color: item.category_color})));
+        console.log('Top expenses:', topExpenses.map(item => ({name: item.category_name, color: item.category_color})));
 
-    // Уничтожаем старый график
-    if (this.categoryChart) {
-        this.categoryChart.destroy();
-    }
+        // Уничтожаем старый график
+        if (this.categoryChart) {
+            this.categoryChart.destroy();
+        }
 
-    this.categoryChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [
-                ...topIncomes.map(item => item.category_name),
-                ...topExpenses.map(item => item.category_name)
-            ],
-            datasets: [
-                {
-                    label: 'Доходы',
-                    data: [
-                        ...topIncomes.map(item => item.total),
-                        ...Array(topExpenses.length).fill(0) // ЗАМЕНИЛИ null на 0
-                    ],
-                    backgroundColor: [
-                        ...topIncomes.map(item => item.category_color),
-                        ...Array(topExpenses.length).fill('transparent') // ПРОЗРАЧНЫЙ для расходов
-                    ],
-                    borderColor: [
-                        ...topIncomes.map(item => this.adjustBrightness(item.category_color, -20)),
-                        ...Array(topExpenses.length).fill('transparent')
-                    ],
-                    borderWidth: 1,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8
-                },
-                {
-                    label: 'Расходы',
-                    data: [
-                        ...Array(topIncomes.length).fill(0), // ЗАМЕНИЛИ null на 0
-                        ...topExpenses.map(item => item.total)
-                    ],
-                    backgroundColor: [
-                        ...Array(topIncomes.length).fill('transparent'), // ПРОЗРАЧНЫЙ для доходов
-                        ...topExpenses.map(item => item.category_color)
-                    ],
-                    borderColor: [
-                        ...Array(topIncomes.length).fill('transparent'),
-                        ...topExpenses.map(item => this.adjustBrightness(item.category_color, -20))
-                    ],
-                    borderWidth: 1,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Топ доходов и расходов по категориям',
-                    font: { size: 16 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            const value = context.raw;
-                            if (value === 0) return ''; // СКРЫВАЕМ нулевые значения
-                            return `${context.dataset.label}: ${this.formatCurrency(value)}`;
+        this.categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    ...topIncomes.map(item => item.category_name),
+                    ...topExpenses.map(item => item.category_name)
+                ],
+                datasets: [
+                    {
+                        label: 'Доходы',
+                        data: [
+                            ...topIncomes.map(item => item.total),
+                            ...Array(topExpenses.length).fill(0) // ЗАМЕНИЛИ null на 0
+                        ],
+                        backgroundColor: [
+                            ...topIncomes.map(item => item.category_color),
+                            ...Array(topExpenses.length).fill('transparent') // ПРОЗРАЧНЫЙ для расходов
+                        ],
+                        borderColor: [
+                            ...topIncomes.map(item => this.adjustBrightness(item.category_color, -20)),
+                            ...Array(topExpenses.length).fill('transparent')
+                        ],
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Расходы',
+                        data: [
+                            ...Array(topIncomes.length).fill(0), // ЗАМЕНИЛИ null на 0
+                            ...topExpenses.map(item => item.total)
+                        ],
+                        backgroundColor: [
+                            ...Array(topIncomes.length).fill('transparent'), // ПРОЗРАЧНЫЙ для доходов
+                            ...topExpenses.map(item => item.category_color)
+                        ],
+                        borderColor: [
+                            ...Array(topIncomes.length).fill('transparent'),
+                            ...topExpenses.map(item => this.adjustBrightness(item.category_color, -20))
+                        ],
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Топ доходов и расходов по категориям',
+                        font: {size: 16}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw;
+                                if (value === 0) return ''; // СКРЫВАЕМ нулевые значения
+                                return `${context.dataset.label}: ${this.formatCurrency(value)}`;
+                            }
                         }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
                     }
                 },
-                legend: {
-                    display: true,
-                    position: 'top'
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => this.formatCurrency(value)
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => this.formatCurrency(value)
+                        },
+                        grid: {color: 'rgba(0, 0, 0, 0.1)'},
+                        title: {display: true, text: 'Сумма'}
                     },
-                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                    title: { display: true, text: 'Сумма' }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: { font: { size: 12 } }
+                    y: {
+                        grid: {display: false},
+                        ticks: {font: {size: 12}}
+                    }
                 }
             }
-        }
-    });
-}
+        });
+    }
 
     renderDailyChart() {
         const ctx = document.getElementById('dailyChart').getContext('2d');
@@ -760,7 +941,7 @@ class FinanceTracker {
                     title: {
                         display: true,
                         text: 'Доходы и расходы по дням',
-                        font: { size: 16 }
+                        font: {size: 16}
                     }
                 },
                 scales: {
@@ -833,7 +1014,7 @@ class FinanceTracker {
                     title: {
                         display: true,
                         text: 'Топ операций по копилке',
-                        font: { size: 16 }
+                        font: {size: 16}
                     },
                     tooltip: {
                         callbacks: {
@@ -855,12 +1036,12 @@ class FinanceTracker {
                         ticks: {
                             callback: (value) => this.formatCurrency(value)
                         },
-                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                        title: { display: true, text: 'Сумма' }
+                        grid: {color: 'rgba(0, 0, 0, 0.1)'},
+                        title: {display: true, text: 'Сумма'}
                     },
                     y: {
-                        grid: { display: false },
-                        ticks: { font: { size: 12 } }
+                        grid: {display: false},
+                        ticks: {font: {size: 12}}
                     }
                 }
             }
@@ -905,7 +1086,7 @@ class FinanceTracker {
                     title: {
                         display: true,
                         text: 'Движение средств копилки по дням',
-                        font: { size: 16 }
+                        font: {size: 16}
                     }
                 },
                 scales: {

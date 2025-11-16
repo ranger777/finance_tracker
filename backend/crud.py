@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 import sqlite3
 from database import get_db, calculate_period_dates
-from models import TransactionCreate, CategoryCreate
+from models import TransactionCreate, CategoryCreate, TransactionUpdate
 
 
 def get_categories(category_type: str = None):
@@ -88,6 +88,87 @@ def get_transactions(start_date: date = None, end_date: date = None, include_sav
     except sqlite3.Error as e:
         return None, f"Ошибка базы данных: {str(e)}"
 
+
+# Добавить в crud.py
+def update_transaction(transaction_id: int, transaction_update: TransactionUpdate):
+    """Обновить транзакцию"""
+    try:
+        with get_db() as conn:
+            # Проверяем существование транзакции
+            transaction_exists = conn.execute(
+                "SELECT id FROM transactions WHERE id = ?",
+                (transaction_id,)
+            ).fetchone()
+
+            if not transaction_exists:
+                return None, "Транзакция не найдена"
+
+            # Собираем поля для обновления
+            update_fields = []
+            params = []
+
+            if transaction_update.amount is not None:
+                update_fields.append("amount = ?")
+                params.append(float(transaction_update.amount))
+
+            if transaction_update.category_id is not None:
+                # Проверяем существование категории
+                category_exists = conn.execute(
+                    "SELECT id FROM categories WHERE id = ? AND is_active = TRUE",
+                    (transaction_update.category_id,)
+                ).fetchone()
+
+                if not category_exists:
+                    return None, "Категория не найдена или неактивна"
+
+                update_fields.append("category_id = ?")
+                params.append(transaction_update.category_id)
+
+            if transaction_update.date is not None:
+                update_fields.append("date = ?")
+                params.append(transaction_update.date)
+
+            if transaction_update.description is not None:
+                update_fields.append("description = ?")
+                params.append(transaction_update.description)
+
+            if not update_fields:
+                return None, "Нет полей для обновления"
+
+            # Добавляем ID транзакции в параметры
+            params.append(transaction_id)
+
+            # Выполняем обновление
+            query = f"UPDATE transactions SET {', '.join(update_fields)} WHERE id = ?"
+            conn.execute(query, params)
+            conn.commit()
+
+            return transaction_id, None
+
+    except sqlite3.Error as e:
+        return None, f"Ошибка базы данных: {str(e)}"
+
+
+def delete_transaction(transaction_id: int):
+    """Удалить транзакцию"""
+    try:
+        with get_db() as conn:
+            # Проверяем существование транзакции
+            transaction_exists = conn.execute(
+                "SELECT id FROM transactions WHERE id = ?",
+                (transaction_id,)
+            ).fetchone()
+
+            if not transaction_exists:
+                return None, "Транзакция не найдена"
+
+            conn.execute("DELETE FROM transactions WHERE id = ?", (transaction_id,))
+            conn.commit()
+
+            return transaction_id, None
+
+    except sqlite3.Error as e:
+        return None, f"Ошибка базы данных: {str(e)}"
 
 def get_analytics(period: str = "month", start_date: date = None, end_date: date = None,
                   group_by: str = "category", include_savings: bool = False):

@@ -42,7 +42,7 @@ def calculate_period_dates(period: str):
 def get_db():
     """Менеджер контекста для работы с БД"""
     # Создаем папку data если её нет
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("../data", exist_ok=True)
 
     conn = sqlite3.connect(DATABASE_URL)
     conn.row_factory = sqlite3.Row
