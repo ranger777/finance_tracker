@@ -8,7 +8,56 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div class="container">
+<!-- Форма первоначальной установки пароля -->
+<div id="setupOverlay" class="auth-overlay" style="display: none;">
+    <div class="auth-container">
+        <h2>Установка пароля</h2>
+        <p>Это ваш первый вход. Установите пароль для защиты данных.</p>
+
+        <!-- ИСПРАВЛЕННАЯ ФОРМА -->
+        <form id="setupForm">
+            <div class="form-group">
+                <label for="setupPassword">Новый пароль:</label>
+                <input type="password" id="setupPassword" required minlength="4"
+                       placeholder="Не менее 4 символов">
+            </div>
+            <div class="form-group">
+                <label for="setupPasswordConfirm">Подтвердите пароль:</label>
+                <input type="password" id="setupPasswordConfirm" required minlength="4"
+                       placeholder="Повторите пароль">
+            </div>
+
+            <button type="submit" class="auth-btn">
+                Установить пароль
+            </button>
+        </form>
+
+        <div id="setupError" class="error-message" style="display: none;"></div>
+
+        <!-- Временная кнопка для тестирования -->
+        <button onclick="window.testPasswordSetup()"
+                style="margin-top: 10px; background: #666; width: 100%; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer;">
+            🔐 ТЕСТ: Установить пароль (тестовые данные)
+        </button>
+    </div>
+</div>
+
+<!-- Форма входа -->
+<div id="loginOverlay" class="auth-overlay" style="display: none;">
+    <div class="auth-container">
+        <h2>Вход в финансовый трекер</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="auth-btn">Войти</button>
+        </form>
+        <div id="loginError" class="error-message" style="display: none;"></div>
+    </div>
+</div>
+
+<div class="container" id="mainApp" style="display: none;">
     <!-- Шапка -->
     <header class="header">
         <h1>💰 Финансовый трекер</h1>
@@ -29,16 +78,6 @@
                     <button onclick="applyCustomDates()">Применить</button>
                 </div>
             </div>
-            <!--<div class="view-toggle">
-                <label>
-                    <input type="radio" name="view" value="main" checked onchange="switchView('main')">
-                    Основная
-                </label>
-                <label>
-                    <input type="radio" name="view" value="savings" onchange="switchView('savings')">
-                    Копилка
-                </label>
-            </div>-->
             <div class="view-toggle">
                 <label class="view-btn">
                     <input type="radio" name="view" value="main" checked onchange="switchView('main')">
@@ -117,9 +156,6 @@
                         <select id="categorySelect" required>
                             <option value="">Выберите категорию</option>
                         </select>
-                        <!--<small style="color: #666; font-size: 12px; margin-top: 5px;">
-                            Для копилки автоматически созданы категории: "Накопления", "Сбережения" и др.
-                        </small>-->
                     </div>
                     <div class="form-group">
                         <label>Сумма:</label>
@@ -197,11 +233,32 @@
                             <!-- Категории будут загружены здесь -->
                         </div>
                     </div>
+
+                    <!-- Секция смены пароля -->
+                    <div class="settings-section">
+                        <h4>🔒 Смена пароля</h4>
+                        <form id="changePasswordForm">
+                            <div class="form-group">
+                                <label for="oldPassword">Текущий пароль:</label>
+                                <input type="password" id="oldPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Новый пароль:</label>
+                                <input type="password" id="newPassword" required minlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPasswordConfirm">Подтвердите новый пароль:</label>
+                                <input type="password" id="newPasswordConfirm" required minlength="4">
+                            </div>
+                            <button type="submit" class="auth-btn">Сменить пароль</button>
+                        </form>
+                        <div id="changePasswordMessage" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- блок для редактирования -->
-            <div class="card edit-view" style="display: none;"> <!-- ИЗМЕНИТЕ КЛАСС -->
+            <div class="card edit-view" style="display: none;">
                 <h3>✏️ Редактирование транзакций</h3>
 
                 <!-- Пагинация -->

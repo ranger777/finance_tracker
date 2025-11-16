@@ -112,6 +112,22 @@ def init_db():
             default_categories
         )
 
+        # Таблица для настроек (только одна запись)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                password_hash TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Создаем запись настроек если её нет
+        conn.execute('''
+            INSERT OR IGNORE INTO app_settings (id, password_hash) 
+            VALUES (1, NULL)
+        ''')
+
         conn.commit()
 
 # Инициализируем БД при импорте

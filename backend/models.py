@@ -75,3 +75,25 @@ class TransactionUpdate(BaseModel):
     category_id: int
     date: date
     description: str | None = None
+
+
+# Модели для аутентификации
+class AuthToken(BaseModel):
+    authenticated: bool
+    issued_at: str
+    expires_at: str
+
+
+class PasswordSetup(BaseModel):
+    password: str
+    password_confirm: str
+
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+    new_password_confirm: str
+
+
+class LoginRequest(BaseModel):
+    password: str
