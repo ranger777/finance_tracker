@@ -105,7 +105,6 @@ class FinanceTracker {
         }
     }
 
-
     async checkAuthStatus() {
         try {
             const status = await this.apiCall('/auth/status', {}, false);
@@ -143,7 +142,6 @@ class FinanceTracker {
             document.getElementById('setupOverlay').style.display = 'flex';
             document.getElementById('loginOverlay').style.display = 'none';
         }
-        // ДОБАВЬТЕ ЭТУ СТРОКУ:
         this.setupAuthEventListeners();
     }
 
@@ -900,12 +898,24 @@ class FinanceTracker {
         this.loadTransactionsForEdit();
     }
 
+    // ИСПРАВЛЕННЫЕ МЕТОДЫ ДЛЯ ГРАФИКОВ:
     renderCharts() {
-        console.log('Charts rendering not implemented');
+        if (!this.analytics) return;
+
+        this.destroyCharts();
+
+        setTimeout(() => {
+            this.renderCategoryChart();
+            this.renderDailyChart();
+        }, 100);
     }
 
     renderSavingsCharts() {
-        console.log('Savings charts rendering not implemented');
+        if (!this.savingsAnalytics) return;
+
+        this.destroySavingsCharts();
+        this.renderSavingsCategoryChart();
+        this.renderSavingsDailyChart();
     }
 
     destroyCharts() {
@@ -928,6 +938,302 @@ class FinanceTracker {
             this.savingsDailyChart.destroy();
             this.savingsDailyChart = null;
         }
+    }
+
+    renderCategoryChart() {
+        const ctx = document.getElementById('categoryChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const incomeData = this.analytics.by_category.filter(item => item.category_type === 'income');
+        const expenseData = this.analytics.by_category.filter(item => item.category_type === 'expense');
+
+        const topIncomes = incomeData.sort((a, b) => b.total - a.total).slice(0, 8);
+        const topExpenses = expenseData.sort((a, b) => b.total - a.total).slice(0, 8);
+
+        if (this.categoryChart) {
+            this.categoryChart.destroy();
+        }
+
+        this.categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    ...topIncomes.map(item => item.category_name),
+                    ...topExpenses.map(item => item.category_name)
+                ],
+                datasets: [
+                    {
+                        label: 'Доходы',
+                        data: [
+                            ...topIncomes.map(item => item.total),
+                            ...Array(topExpenses.length).fill(0)
+                        ],
+                        backgroundColor: [
+                            ...topIncomes.map(item => item.category_color),
+                            ...Array(topExpenses.length).fill('transparent')
+                        ],
+                        borderColor: [
+                            ...topIncomes.map(item => this.adjustBrightness(item.category_color, -20)),
+                            ...Array(topExpenses.length).fill('transparent')
+                        ],
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Расходы',
+                        data: [
+                            ...Array(topIncomes.length).fill(0),
+                            ...topExpenses.map(item => item.total)
+                        ],
+                        backgroundColor: [
+                            ...Array(topIncomes.length).fill('transparent'),
+                            ...topExpenses.map(item => item.category_color)
+                        ],
+                        borderColor: [
+                            ...Array(topIncomes.length).fill('transparent'),
+                            ...topExpenses.map(item => this.adjustBrightness(item.category_color, -20))
+                        ],
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Топ доходов и расходов по категориям',
+                        font: {size: 16}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw;
+                                if (value === 0) return '';
+                                return `${context.dataset.label}: ${this.formatCurrency(value)}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => this.formatCurrency(value)
+                        },
+                        grid: {color: 'rgba(0, 0, 0, 0.1)'},
+                        title: {display: true, text: 'Сумма'}
+                    },
+                    y: {
+                        grid: {display: false},
+                        ticks: {font: {size: 12}}
+                    }
+                }
+            }
+        });
+    }
+
+    renderDailyChart() {
+        const ctx = document.getElementById('dailyChart')?.getContext('2d');
+        if (!ctx) return;
+
+        this.dailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: this.analytics.daily_totals.map(item => this.formatDate(item.date)),
+                datasets: [
+                    {
+                        label: 'Доходы',
+                        data: this.analytics.daily_totals.map(item => item.income),
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Расходы',
+                        data: this.analytics.daily_totals.map(item => item.expense),
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Доходы и расходы по дням',
+                        font: {size: 16}
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => this.formatCurrency(value)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderSavingsCategoryChart() {
+        const ctx = document.getElementById('savingsCategoryChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const savingsData = this.savingsAnalytics.by_category.filter(
+            item => item.category_type === 'savings_income' || item.category_type === 'savings_expense'
+        );
+
+        const withdrawalsData = savingsData.filter(item => item.category_type === 'savings_income');
+        const depositsData = savingsData.filter(item => item.category_type === 'savings_expense');
+
+        const topWithdrawals = withdrawalsData.sort((a, b) => b.total - a.total).slice(0, 8);
+        const topDeposits = depositsData.sort((a, b) => b.total - a.total).slice(0, 8);
+
+        this.savingsCategoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    ...topWithdrawals.map(item => item.category_name),
+                    ...topDeposits.map(item => item.category_name)
+                ],
+                datasets: [
+                    {
+                        label: 'Из копилки',
+                        data: [
+                            ...topWithdrawals.map(item => item.total),
+                            ...Array(topDeposits.length).fill(null)
+                        ],
+                        backgroundColor: topWithdrawals.map(item => item.category_color),
+                        borderColor: topWithdrawals.map(item => this.adjustBrightness(item.category_color, -20)),
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'В копилку',
+                        data: [
+                            ...Array(topWithdrawals.length).fill(null),
+                            ...topDeposits.map(item => item.total)
+                        ],
+                        backgroundColor: topDeposits.map(item => item.category_color),
+                        borderColor: topDeposits.map(item => this.adjustBrightness(item.category_color, -20)),
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Топ операций по копилке',
+                        font: {size: 16}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw;
+                                if (value === null) return '';
+                                return `${context.dataset.label}: ${this.formatCurrency(value)}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => this.formatCurrency(value)
+                        },
+                        grid: {color: 'rgba(0, 0, 0, 0.1)'},
+                        title: {display: true, text: 'Сумма'}
+                    },
+                    y: {
+                        grid: {display: false},
+                        ticks: {font: {size: 12}}
+                    }
+                }
+            }
+        });
+    }
+
+    renderSavingsDailyChart() {
+        const ctx = document.getElementById('savingsDailyChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const dailyData = this.savingsAnalytics.savings_daily_totals || [];
+
+        this.savingsDailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(item => this.formatDate(item.date)),
+                datasets: [
+                    {
+                        label: 'Из копилки',
+                        data: dailyData.map(item => item.savings_income || 0),
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'В копилку',
+                        data: dailyData.map(item => item.savings_expense || 0),
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Движение средств копилки по дням',
+                        font: {size: 16}
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => this.formatCurrency(value)
+                        }
+                    }
+                }
+            }
+        });
     }
 
     adjustBrightness(hex, percent) {
