@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 import os
 
-DATABASE_URL = "../data/finance.db"
+DATABASE_URL = "data/finance.db"
 
 
 def calculate_period_dates(period: str):
@@ -42,7 +42,7 @@ def calculate_period_dates(period: str):
 def get_db():
     """Менеджер контекста для работы с БД"""
     # Создаем папку data если её нет
-    os.makedirs("../data", exist_ok=True)
+    os.makedirs("data", exist_ok=True)
 
     conn = sqlite3.connect(DATABASE_URL)
     conn.row_factory = sqlite3.Row
@@ -87,23 +87,17 @@ def init_db():
             ('Накопления', 'savings_expense', '#00ff00'),
 
             # Доходы
-            ('Пенсия', 'income', '#28a745'),
+            ('Подарок', 'income', '#28a745'),
             ('Зарплата', 'income', '#20c997'),
             ('Перевод частный', 'income', '#17a2b8'),
-            ('Перевод между счетами', 'income', '#6f42c1'),  # ⬅️ Может существовать как доход
-            ('Инвестиции', 'income', '#6610f2'),
 
             # Расходы
-            ('WB', 'expense', '#dc3545'),
-            ('OZON', 'expense', '#fd7e14'),
             ('Продукты', 'expense', '#e83e8c'),
-            ('Оплата за квартиру', 'expense', '#007bff'),
-            ('Оплата за дачу', 'expense', '#28a745'),
+            ('Связь', 'expense', '#007bff'),
             ('Транспорт', 'expense', '#ffc107'),
             ('Развлечения', 'expense', '#6610f2'),
             ('Кафе и рестораны', 'expense', '#e83e8c'),
-            ('Здоровье', 'expense', '#dc3545'),
-            ('Одежда', 'expense', '#fd7e14')
+            ('Здоровье', 'expense', '#dc3545')
         ]
 
         # Используем INSERT OR IGNORE чтобы избежать дубликатов

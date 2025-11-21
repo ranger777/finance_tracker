@@ -1,3 +1,5 @@
+import webbrowser
+
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -15,6 +17,8 @@ from models import *
 from crud import *
 from database import calculate_period_dates, get_db
 
+PORT = 8101
+
 app = FastAPI(
     title="Finance Tracker API",
     description="Персональный трекер доходов и расходов",
@@ -23,11 +27,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=[f'http://localhost:{PORT}', f'http://127.0.0.1:{PORT}'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# сразу запускаем страничку
+webbrowser.open(f'http://localhost:{PORT}')
 
 # Хеширование паролей - используем argon2 вместо bcrypt (нет ограничения по длине)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -541,8 +548,13 @@ app.mount("/", StaticFiles(directory="../frontend"), name="frontend")
 if __name__ == "__main__":
     import uvicorn
 
-    print("🚀 Запуск финансового трекера...")
-    print("📊 Бекенд API: http://localhost:8000")
-    print("🎨 Фронтенд: http://localhost:8000")
-    print("📚 Документация API: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    try:
+        print("🚀 Запуск финансового трекера...")
+        print(f"📊 Бекенд API: http://localhost:{PORT}")
+        print(f"🎨 Фронтенд: http://localhost:{PORT}")
+        print(f"📚 Документация API: http://localhost:{PORT}/docs")
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        print("⚠️  Нажмите Enter для выхода...")
+        input()  # Ждет нажатия Enter

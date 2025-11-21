@@ -1,6 +1,6 @@
 class FinanceTracker {
     constructor() {
-        this.apiUrl = 'http://localhost:8000/api';
+        this.apiUrl = 'http://localhost:8101/api';
         this.categories = [];
         this.transactions = [];
         this.analytics = null;
@@ -972,6 +972,7 @@ class FinanceTracker {
                             ...topIncomes.map(item => item.category_color),
                             ...Array(topExpenses.length).fill('transparent')
                         ],
+
                         borderColor: [
                             ...topIncomes.map(item => this.adjustBrightness(item.category_color, -20)),
                             ...Array(topExpenses.length).fill('transparent')
